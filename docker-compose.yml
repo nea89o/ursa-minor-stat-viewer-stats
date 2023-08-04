@@ -2,7 +2,7 @@ version: '3'
 
 services:
   stats:
-    build: .
+    image: ghcr.io/romangraef/ursa-minor-stat-viewer-stats
     volumes:
       - ./data:/app/data
     network_mode: host
