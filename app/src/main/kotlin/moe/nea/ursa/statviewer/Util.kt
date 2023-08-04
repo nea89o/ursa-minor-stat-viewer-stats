@@ -6,6 +6,8 @@ import java.io.File
 import java.sql.DriverManager
 
 object Util {
+    fun getResource(name: String) = Util::class.java.getResourceAsStream(name)
+
     val constant = LoggerFactory.getLogger("Constant")
     fun getToken() = System.getenv("TOKEN")
     fun getDatabaseFile() = File("data/database.db").absoluteFile
