@@ -20,19 +20,28 @@ import kotlin.time.toKotlinDuration
 
 object GraphCreator {
 
-    fun createGraphFromPoints(title: String, points: List<Pair<Instant, Double>>, yAxis: String): JFreeChart {
+    fun createGraphFromPoints(
+        title: String,
+        pointsLists: Map<String, List<Pair<Instant, Double>>>,
+        yAxis: String
+    ): JFreeChart {
+        val timeSeriesCollection = TimeSeriesCollection(TimeZone.getTimeZone(ZoneOffset.UTC))
+        pointsLists.forEach { (label, points) ->
+            val series = TimeSeries(label)
+            points.forEach { (time, value) ->
+                series.add(TimeSeriesDataItem(FixedMillisecond(time.toEpochMilli()), value))
+            }
+            timeSeriesCollection.addSeries(series)
+        }
         val chart = ChartFactory.createTimeSeriesChart(
             title,
             "Time",
             yAxis,
-            TimeSeriesCollection(TimeSeries(title).also { series ->
-                points.forEach { (time, value) ->
-                    series.add(TimeSeriesDataItem(FixedMillisecond(time.toEpochMilli()), value))
-                }
-            }, TimeZone.getTimeZone(ZoneOffset.UTC)),
+            timeSeriesCollection
         )
         val plot = chart.xyPlot
-        plot.backgroundPaint = Color.DARK_GRAY
+        chart.backgroundPaint = Color.darkGray
+        plot.backgroundPaint = Color.darkGray
         plot.domainGridlinePaint = Color.white
         plot.rangeGridlinePaint = Color.white
         val dateAxis = plot.domainAxis as DateAxis

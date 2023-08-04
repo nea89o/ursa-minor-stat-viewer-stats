@@ -46,19 +46,20 @@ object DiscordBot : ListenerAdapter() {
 
     override fun onSlashCommandInteraction(event: SlashCommandInteractionEvent) {
         if (event.name == "metrics") {
-            val key = event.getOption("key")!!.asString
+            val key = event.getOption("key")?.asString
             val isDeltas = event.subcommandName == "delta"
             event.deferReply().queue {
                 val graphStart = Instant.now().minus(1, ChronoUnit.DAYS)
-                var graphPoints = GraphCreator.queryGraphPoints(key, graphStart)
+                val keysToQuery = key?.split(",") ?: Scraper.lastKeys
+                var graphPoints = keysToQuery.map { Pair(it, GraphCreator.queryGraphPoints(it, graphStart)) }
                 if (isDeltas) {
-                    graphPoints = GraphCreator.calculateGraphDeltas(graphPoints)
+                    graphPoints = graphPoints.map { Pair(it.first, GraphCreator.calculateGraphDeltas(it.second)) }
                 }
                 val graph = GraphCreator.renderGraph(
                     GraphCreator.createGraphFromPoints(
                         if (isDeltas) "$key requests per minute over time"
                         else ("total $key requests over time"),
-                        graphPoints,
+                        graphPoints.toMap(),
                         if (isDeltas) "requests / minute"
                         else "requests"
                     )
