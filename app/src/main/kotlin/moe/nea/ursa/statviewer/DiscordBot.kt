@@ -57,8 +57,8 @@ object DiscordBot : ListenerAdapter() {
                 }
                 val graph = GraphCreator.renderGraph(
                     GraphCreator.createGraphFromPoints(
-                        if (isDeltas) "$key requests per minute over time"
-                        else ("total $key requests over time"),
+                        if (isDeltas) "requests per minute over time"
+                        else ("total requests over time"),
                         graphPoints.toMap(),
                         if (isDeltas) "requests / minute"
                         else "requests"
