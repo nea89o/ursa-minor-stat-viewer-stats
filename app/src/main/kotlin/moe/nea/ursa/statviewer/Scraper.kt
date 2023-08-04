@@ -15,13 +15,14 @@ object Scraper {
         logger.info("Starting scraping")
         val keys = jedis.keys("hypixel:accumulated:*")
         lastKeys = keys.toList()
+        val timestamp = System.currentTimeMillis()
         for (key in keys) {
             val value = jedis.get(key)?.toLongOrNull() ?: continue
             val statement =
                 connection.prepareStatement("INSERT INTO metrics (`key`, `value`, `timestamp`) VALUES (?,?,?);")
             statement.setString(1, key)
             statement.setLong(2, value)
-            statement.setLong(3, System.currentTimeMillis())
+            statement.setLong(3, timestamp)
             statement.execute()
         }
         logger.info("Finished scraping $keys")

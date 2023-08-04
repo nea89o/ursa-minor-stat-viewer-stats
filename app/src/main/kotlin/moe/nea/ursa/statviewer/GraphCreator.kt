@@ -10,19 +10,21 @@ import org.jfree.data.time.TimeSeriesCollection
 import org.jfree.data.time.TimeSeriesDataItem
 import java.awt.Color
 import java.io.ByteArrayOutputStream
-import java.sql.DriverManager
 import java.text.SimpleDateFormat
+import java.time.Duration
 import java.time.Instant
 import java.time.ZoneOffset
 import java.util.*
+import kotlin.time.DurationUnit
+import kotlin.time.toKotlinDuration
 
 object GraphCreator {
 
-    fun createGraphFromPoints(title: String, points: List<Pair<Instant, Long>>): JFreeChart {
+    fun createGraphFromPoints(title: String, points: List<Pair<Instant, Double>>, yAxis: String): JFreeChart {
         val chart = ChartFactory.createTimeSeriesChart(
             title,
             "Time",
-            "Requests",
+            yAxis,
             TimeSeriesCollection(TimeSeries(title).also { series ->
                 points.forEach { (time, value) ->
                     series.add(TimeSeriesDataItem(FixedMillisecond(time.toEpochMilli()), value))
@@ -44,7 +46,16 @@ object GraphCreator {
         return baos.toByteArray()
     }
 
-    fun queryGraphPoints(key: String, since: Instant): List<Pair<Instant, Long>> {
+    fun calculateGraphDeltas(dataPoints: List<Pair<Instant, Double>>): List<Pair<Instant, Double>> {
+        return dataPoints.zipWithNext().map { (last, next) ->
+            val δv = next.second - last.second
+            val δt = Duration.between(last.first, next.first).toKotlinDuration().toDouble(DurationUnit.MINUTES)
+            val perMinute = δv / δt
+            next.first to perMinute
+        }
+    }
+
+    fun queryGraphPoints(key: String, since: Instant): List<Pair<Instant, Double>> {
         val connection = Util.getConnection()
         val preparedStatement =
             connection.prepareStatement("SELECT  value, timestamp from metrics where key = ? and timestamp > ? order by timestamp desc")
@@ -55,7 +66,7 @@ object GraphCreator {
                 while (it.next()) {
                     val value = it.getLong(1)
                     val timestamp = Instant.ofEpochMilli(it.getLong(2))
-                    add(timestamp to value)
+                    add(timestamp to value.toDouble())
                 }
             }
         }

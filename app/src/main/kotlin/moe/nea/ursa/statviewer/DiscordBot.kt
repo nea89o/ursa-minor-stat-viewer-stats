@@ -8,6 +8,7 @@ import net.dv8tion.jda.api.events.session.ReadyEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
 import net.dv8tion.jda.api.interactions.commands.OptionType
 import net.dv8tion.jda.api.interactions.commands.build.Commands
+import net.dv8tion.jda.api.interactions.commands.build.SubcommandData
 import net.dv8tion.jda.api.utils.FileUpload
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -18,25 +19,48 @@ object DiscordBot : ListenerAdapter() {
         jda.updateCommands()
             .addCommands(
                 Commands.slash("metrics", "Show server metrics")
-                    .addOption(OptionType.STRING, "key", "Which key you want to query", true, true)
+                    .addSubcommands(
+                        SubcommandData("total", "Total requests").addOption(
+                            OptionType.STRING,
+                            "key",
+                            "Which key you want to query",
+                            false,
+                            true
+                        ),
+                        SubcommandData("delta", "Requests per minute").addOption(
+                            OptionType.STRING,
+                            "key",
+                            "Which key you want to query",
+                            false,
+                            true
+                        )
+                    )
             ).queue()
     }
 
     override fun onCommandAutoCompleteInteraction(event: CommandAutoCompleteInteractionEvent) {
-        if (event.fullCommandName == "metrics" && event.focusedOption.name == "key") {
+        if (event.name == "metrics" && event.focusedOption.name == "key") {
             event.replyChoiceStrings(Scraper.lastKeys).queue()
         }
     }
 
     override fun onSlashCommandInteraction(event: SlashCommandInteractionEvent) {
-        if (event.fullCommandName == "metrics") {
+        if (event.name == "metrics") {
             val key = event.getOption("key")!!.asString
+            val isDeltas = event.subcommandName == "delta"
             event.deferReply().queue {
                 val graphStart = Instant.now().minus(1, ChronoUnit.DAYS)
+                var graphPoints = GraphCreator.queryGraphPoints(key, graphStart)
+                if (isDeltas) {
+                    graphPoints = GraphCreator.calculateGraphDeltas(graphPoints)
+                }
                 val graph = GraphCreator.renderGraph(
                     GraphCreator.createGraphFromPoints(
-                        "total $key requests over time",
-                        GraphCreator.queryGraphPoints(key, graphStart)
+                        if (isDeltas) "$key requests per minute over time"
+                        else ("total $key requests over time"),
+                        graphPoints,
+                        if (isDeltas) "requests / minute"
+                        else "requests"
                     )
                 )
                 it.sendFiles(FileUpload.fromData(graph, "graph.png")).queue()
