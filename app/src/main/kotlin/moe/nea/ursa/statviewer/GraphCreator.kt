@@ -4,6 +4,7 @@ import org.jfree.chart.ChartFactory
 import org.jfree.chart.ChartPanel
 import org.jfree.chart.ChartUtils
 import org.jfree.chart.JFreeChart
+import org.jfree.chart.axis.Axis
 import org.jfree.chart.axis.DateAxis
 import org.jfree.chart.renderer.AbstractRenderer
 import org.jfree.data.time.FixedMillisecond
@@ -51,12 +52,21 @@ object GraphCreator {
         legend.itemFont = chart.legend.itemFont.deriveFont(20F)
         val renderer = plot.renderer
         renderer.defaultStroke = BasicStroke(4F)
+        renderer.defaultPaint = Color.white
         (renderer as AbstractRenderer).autoPopulateSeriesStroke = false
         chart.backgroundPaint = Color.darkGray
         plot.backgroundPaint = Color.darkGray
         plot.domainGridlinePaint = Color.white
         plot.rangeGridlinePaint = Color.white
         val dateAxis = plot.domainAxis as DateAxis
+        fun Axis.setWhite() {
+            labelPaint = Color.white
+            axisLinePaint = Color.white
+            tickMarkPaint = Color.white
+            tickLabelPaint = Color.white
+        }
+        plot.rangeAxis.setWhite()
+        dateAxis.setWhite()
         dateAxis.dateFormatOverride = SimpleDateFormat("dd.MM HH:mm")
         return chart
     }
