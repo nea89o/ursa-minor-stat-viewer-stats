@@ -1,9 +1,0 @@
-data/
-gradle/
-.idea/
-.gradle/
-.git/
-.gitignore/
-.gitattributes/
-build/
-app/build/
